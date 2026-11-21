@@ -1,12 +1,7 @@
 import React from 'react';
-import type { IndustryTheme } from '../types/theme';
 import { PlaceholderImage } from './PlaceholderImage';
 
-interface EditorialSectionProps {
-  theme: IndustryTheme;
-}
-
-export const EditorialSection: React.FC<EditorialSectionProps> = ({ theme }) => {
+export const EditorialSection: React.FC = () => {
   return (
     <section className="border-t border-border/60 bg-neutral-950 text-white py-20 sm:py-24 my-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,30 +21,26 @@ export const EditorialSection: React.FC<EditorialSectionProps> = ({ theme }) => 
               The Philosophy
             </p>
 
-            <h2 className={`${theme.fontClass} text-4xl sm:text-5xl font-normal tracking-tight text-white leading-tight`}>
-              {theme.storyTitle} <br />
-              <span className="italic">{theme.storySubtitle}</span>
+            <h2 className="font-editorial text-4xl sm:text-5xl font-normal tracking-tight text-white leading-tight">
+              Crafted Without Compromise. <br />
+              <span className="italic">Built to Last Generations.</span>
             </h2>
 
             <p className="text-sm text-neutral-300 font-light leading-relaxed">
-              {theme.storyDescription}
+              Every piece in our catalog is engineered through meticulous prototyping. We source custom-milled French terry cotton, aerospace-grade titanium, and vegetable-tanned leather to produce garments that age with dignity.
             </p>
 
             <div className="pt-4 grid grid-cols-2 gap-6 border-t border-white/10 text-xs">
               <div>
-                <p className={`${theme.fontClass} text-2xl font-normal text-white`}>
-                  {theme.stat1Number}
-                </p>
+                <p className="font-editorial text-2xl font-normal text-white">100%</p>
                 <p className="text-neutral-400 mt-1 uppercase tracking-wider text-[10px]">
-                  {theme.stat1Label}
+                  Organic Materials
                 </p>
               </div>
               <div>
-                <p className={`${theme.fontClass} text-2xl font-normal text-white`}>
-                  {theme.stat2Number}
-                </p>
+                <p className="font-editorial text-2xl font-normal text-white">0-Waste</p>
                 <p className="text-neutral-400 mt-1 uppercase tracking-wider text-[10px]">
-                  {theme.stat2Label}
+                  Pattern Engineering
                 </p>
               </div>
             </div>

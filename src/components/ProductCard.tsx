@@ -7,13 +7,11 @@ import { PlaceholderImage } from './PlaceholderImage';
 
 interface ProductCardProps {
   product: Product;
-  cardAspect?: string;
   onQuickView: (product: Product) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
-  cardAspect = 'aspect-[3/4]',
   onQuickView,
 }) => {
   const { addToCart } = useCart();
@@ -28,8 +26,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div className="group relative flex flex-col bg-background text-foreground transition-all duration-300">
-      {/* Aspect Ratio Image Container */}
-      <div className={`relative ${cardAspect} w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 cursor-pointer border border-border/50`}>
+      {/* 3:4 Aspect Ratio Image Container */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 cursor-pointer border border-border/50">
         {isExternalImage ? (
           <img
             src={product.primaryImage}
