@@ -1,56 +1,69 @@
 import React from 'react';
-import { Zap, Shield, Sparkles, Globe } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Truck, RefreshCw, Award } from 'lucide-react';
 
 export const Hero: React.FC<{ onExplore: () => void }> = ({ onExplore }) => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-secondary/50 via-background to-background py-16 sm:py-24 border-b border-border/30">
+    <section className="relative overflow-hidden bg-gradient-to-b from-secondary/40 via-background to-background py-16 sm:py-24 border-b border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-        {/* Edge Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold mb-6 border border-border/80 shadow-sm animate-in fade-in">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Next-Gen Edge Commerce • Powered by Cloudflare</span>
+        {/* Collection Drop Tag */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary text-foreground text-xs font-bold uppercase tracking-wider mb-6 border border-border shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>New Season Drop • 2026 Collection</span>
         </div>
 
-        {/* Main Heading */}
+        {/* E-Commerce Retail Headline */}
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground max-w-4xl mx-auto leading-[1.1]">
-          Engineered for Speed. <br />
+          Refined Essentials. <br />
           <span className="bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-400 bg-clip-text text-transparent">
-            Crafted for the Minimalist.
+            Crafted for Daily Living.
           </span>
         </h1>
 
-        {/* Subtitle */}
+        {/* E-Commerce Subtitle */}
         <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto font-normal leading-relaxed">
-          Zero latency global storefront running 100% on Cloudflare Workers, D1 database, and R2 object storage. Ultra-fast checkout with Stripe.
+          Thoughtfully engineered footwear, apparel, and everyday accessories made from sustainable, premium materials. Designed for timeless form and utility.
         </p>
 
-        {/* CTA Buttons */}
+        {/* CTA Button */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={onExplore}
-            className="px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-all shadow-md active:scale-95"
+            className="px-8 py-3.5 rounded-full bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-all shadow-lg active:scale-95 flex items-center gap-2"
           >
-            Explore The Drop
+            <span>Explore Collection</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Value Prop Badges */}
-        <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-8 border-t border-border/40 text-left">
+        {/* Real Customer Trust Badges */}
+        <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-border/40 text-left">
           <div className="flex items-center gap-2.5">
-            <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
-            <span className="text-xs font-semibold text-foreground">&lt;50ms Edge Latency</span>
+            <Truck className="w-4 h-4 text-primary shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-foreground">Free Shipping</p>
+              <p className="text-[11px] text-muted-foreground">On all orders over $100</p>
+            </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Shield className="w-4 h-4 text-blue-500 shrink-0" />
-            <span className="text-xs font-semibold text-foreground">Stripe Verified Pay</span>
+            <RefreshCw className="w-4 h-4 text-primary shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-foreground">30-Day Returns</p>
+              <p className="text-[11px] text-muted-foreground">Hassle-free exchange</p>
+            </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Globe className="w-4 h-4 text-purple-500 shrink-0" />
-            <span className="text-xs font-semibold text-foreground">300+ Edge Nodes</span>
+            <Award className="w-4 h-4 text-primary shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-foreground">Premium Quality</p>
+              <p className="text-[11px] text-muted-foreground">Ethically crafted goods</p>
+            </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-            <span className="text-xs font-semibold text-foreground">$0 Monthly Hosting</span>
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-foreground">Secure Checkout</p>
+              <p className="text-[11px] text-muted-foreground">256-bit SSL encryption</p>
+            </div>
           </div>
         </div>
       </div>

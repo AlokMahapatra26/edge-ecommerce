@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <span className="font-extrabold text-lg tracking-tight">EDGE COMMERCE</span>
               <span className="text-xs block text-muted-foreground font-medium -mt-1 tracking-wider uppercase">
-                Cloudflare Turnkey
+                Online Store
               </span>
             </div>
           </button>
