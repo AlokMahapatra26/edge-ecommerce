@@ -184,7 +184,7 @@ export const AppContent: React.FC = () => {
       <footer className="border-t border-border/50 bg-secondary/20 py-10 mt-16 text-center text-xs text-muted-foreground">
         <div className="max-w-7xl mx-auto px-4 space-y-2">
           <p className="font-bold text-foreground">
-            Lumina Commerce — 100% Cloudflare Native Turnkey E-Commerce
+            Edge Commerce — 100% Cloudflare Native Turnkey E-Commerce
           </p>
           <p>
             Powered by Cloudflare Workers • D1 SQLite Database • R2 Storage • Stripe Checkout

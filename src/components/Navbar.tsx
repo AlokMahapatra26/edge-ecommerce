@@ -27,12 +27,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 group text-left"
           >
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm">
-              L
+              E
             </div>
             <div>
-              <span className="font-extrabold text-lg tracking-tight">LUMINA</span>
+              <span className="font-extrabold text-lg tracking-tight">EDGE COMMERCE</span>
               <span className="text-xs block text-muted-foreground font-medium -mt-1 tracking-wider uppercase">
-                Edge Store
+                Cloudflare Turnkey
               </span>
             </div>
           </button>

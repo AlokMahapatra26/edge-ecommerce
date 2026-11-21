@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cloudflare-ecom",
+  "name": "edge-commerce",
   "main": "src/api/index.ts",
   "compatibility_date": "2026-11-21",
   "compatibility_flags": ["nodejs_compat"],
@@ -25,7 +25,7 @@
   ],
   "vars": {
     "ENVIRONMENT": "development",
-    "APP_NAME": "Lumina Commerce"
+    "APP_NAME": "Edge Commerce"
   },
   "observability": {
     "enabled": true

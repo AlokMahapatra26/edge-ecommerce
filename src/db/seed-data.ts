@@ -7,7 +7,7 @@ export const SEED_CATEGORIES = [
 
 export const SEED_PRODUCTS = [
   {
-    id: 'prod_lumina_runner_01',
+    id: 'prod_edge_runner_01',
     categoryId: 1,
     title: 'AeroGlide Carbon Sneakers',
     slug: 'aeroglide-carbon-sneakers',
@@ -24,7 +24,7 @@ export const SEED_PRODUCTS = [
     ],
   },
   {
-    id: 'prod_lumina_hoodie_02',
+    id: 'prod_edge_hoodie_02',
     categoryId: 2,
     title: 'Heavyweight Loopback Hoodie',
     slug: 'heavyweight-loopback-hoodie',
@@ -41,7 +41,7 @@ export const SEED_PRODUCTS = [
     ],
   },
   {
-    id: 'prod_lumina_watch_03',
+    id: 'prod_edge_watch_03',
     categoryId: 3,
     title: 'Chronosphere Automatic Watch',
     slug: 'chronosphere-automatic-watch',
@@ -56,7 +56,7 @@ export const SEED_PRODUCTS = [
     ],
   },
   {
-    id: 'prod_lumina_headphones_04',
+    id: 'prod_edge_headphones_04',
     categoryId: 4,
     title: 'Horizon Studio Over-Ear Headphones',
     slug: 'horizon-studio-headphones',
@@ -71,7 +71,7 @@ export const SEED_PRODUCTS = [
     ],
   },
   {
-    id: 'prod_lumina_backpack_05',
+    id: 'prod_edge_backpack_05',
     categoryId: 3,
     title: 'Modular Commuter Backpack 22L',
     slug: 'modular-commuter-backpack',
@@ -86,7 +86,7 @@ export const SEED_PRODUCTS = [
     ],
   },
   {
-    id: 'prod_lumina_sunglasses_06',
+    id: 'prod_edge_sunglasses_06',
     categoryId: 3,
     title: 'Solstice Polarized Sunglasses',
     slug: 'solstice-polarized-sunglasses',

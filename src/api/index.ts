@@ -28,7 +28,7 @@ app.use('/api/*', cors({
 app.get('/api/health', (c) => {
   return c.json({
     status: 'ok',
-    app: c.env.APP_NAME || 'Lumina Commerce',
+    app: c.env.APP_NAME || 'Edge Commerce',
     timestamp: new Date().toISOString(),
     runtime: 'Cloudflare Workers (Edge)',
   });
