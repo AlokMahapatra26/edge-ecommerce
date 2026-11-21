@@ -1,0 +1,214 @@
+================================================================================
+COMPLETE E-COMMERCE BLUEPRINT (100% CLOUDFLARE NATIVE STACK)
+Architecture: Single-Provider Serverless Edge Commerce
+Hosting, Compute, Database, Storage, Queue, Email & Security all on Cloudflare
+================================================================================
+
+--------------------------------------------------------------------------------
+1. THE 100% CLOUDFLARE PRODUCT MAPPING
+--------------------------------------------------------------------------------
+Every single piece of your infrastructure runs natively inside Cloudflare:
+
+Component                     Cloudflare Native Service       Why it is powerful
+--------------------------------------------------------------------------------
+Storefront & Admin UI         Cloudflare Pages / Assets       Edge-hosted, global CDN, 0ms latency
+Backend API & Routing         Cloudflare Workers (Hono.js)    0ms cold-start, scales to millions of requests
+Primary Database (SQL)        Cloudflare D1 (SQLite)          Serverless SQL at the edge, zero maintenance
+Fast Cache & Sessions         Cloudflare KV                   Ultra-fast session storage & cart caching
+Asset / Image Storage         Cloudflare R2                   Zero egress bandwidth fees (unlike AWS S3)
+Async Task & Webhook Queue    Cloudflare Queues               Handles order spikes, retry logic without crashing
+Scheduled Jobs (Cron)         Cloudflare Cron Triggers        Daily sales summaries, abandoned cart emails
+Anti-Bot & Fraud Shield       Cloudflare Turnstile            Invisible, privacy-first bot check (replaces CAPTCHA)
+Transactional Emails          Cloudflare Email / Workers Mail Zero external mail services required
+Traffic & Sales Analytics     Cloudflare Web Analytics        Built-in, privacy-first, zero cookie banners
+Payment Gateway               Stripe API (Hosted Checkout)    External bank rail integrated via Workers API
+
+*Result: Total monthly infrastructure cost for a small store = $0.00 (Free Tier).*
+
+
+--------------------------------------------------------------------------------
+2. CUSTOMER STOREFRONT (WHAT SHOPPERS SEE & INTERACT WITH)
+--------------------------------------------------------------------------------
+2.1 Homepage
+    - Hero Banner (offers, promotions, seasonal drops)
+    - Featured Categories (Men, Women, Accessories, etc.)
+    - Best Sellers & New Arrivals product carousels
+    - Trust Badges (Free shipping, secure checkout, money-back guarantee)
+    - Newsletter Signup & Footer (policies, contact info)
+
+2.2 Product Listing Page (PLP / Catalog)
+    - Product Grid (thumbnail, title, price, discount badge, quick-add button)
+    - Filtering System (by category, price range, stock availability)
+    - Sorting Options (Price: Low/High, Newest, Best-selling)
+    - Search Bar (powered by D1 FTS5 full-text search)
+    - Pagination / Infinite Scroll
+
+2.3 Product Details Page (PDP)
+    - Image Gallery (loaded directly from Cloudflare R2 via custom domain)
+    - Product Title, SKU, Base Price, and Discounted Price
+    - Variant Selectors: Size, Color (dynamically updates price & stock)
+    - Stock Status Badge ("In Stock", "Only 2 Left", "Out of Stock")
+    - Rich Description, Specs, Dimensions
+    - "Add to Cart" and "Buy Now" CTA buttons
+    - Customer Reviews & Star Ratings
+
+2.4 Cart System (Slide-out Drawer or Dedicated Page)
+    - Items list with images, selected variants, and quantity controls
+    - Remove Item / Clear Cart
+    - Coupon / Promo Code validation in real-time
+    - Cost Breakdown: Subtotal + Estimated Tax + Shipping Fee = Final Total
+    - Cart persistence via Cloudflare KV or Browser LocalStorage
+
+2.5 Checkout & Payment Flow
+    - Bot verification via Cloudflare Turnstile (blocks scrapers/card-testing bots)
+    - Redirect to Stripe Hosted Checkout (cards, Apple Pay, Google Pay)
+    - Order Success Page (#ORD-1024, summary, shipping confirmation)
+
+2.6 Customer Account Portal (Optional in V1)
+    - Passwordless / Magic Link login
+    - Order History with live status
+
+
+--------------------------------------------------------------------------------
+3. ADMIN DASHBOARD (STORE OWNER BACKOFFICE)
+--------------------------------------------------------------------------------
+3.1 Overview & Analytics
+    - Today's / Monthly Revenue, Total Orders, Average Order Value (AOV)
+    - Sales graph over time
+    - Low-stock alerts badge
+    - Recent orders feed
+
+3.2 Product Management (Catalog CRUD)
+    - Add New Product / Edit / Archive / Delete
+    - Direct-to-R2 Image Upload (via presigned URLs or Worker upload handler)
+    - Variant Builder: Define Size/Color matrix with individual SKUs, prices, stock
+    - Category & Tag assignments
+
+3.3 Inventory Management
+    - Real-time stock counts across all product variants
+    - Out-of-stock thresholds and restock alerts
+    - Manual stock adjustments
+
+3.4 Order Management
+    - List of all orders with filters (Pending, Paid, Shipped, Delivered, Cancelled)
+    - Order Detail view: Customer details, items bought, payment ID
+    - Status updates: Mark as "Processing" -> "Shipped" (add tracking number) -> "Delivered"
+    - Refund / Cancellation triggers via Stripe API
+
+3.5 Discounts & Promotions
+    - Promo Code creation (Percentage discount, Flat amount discount)
+    - Usage limits and expiration dates
+
+
+--------------------------------------------------------------------------------
+4. DATABASE SCHEMA (CLOUDFLARE D1 / SQLITE + DRIZZLE ORM)
+--------------------------------------------------------------------------------
+- users
+    id (TEXT / UUID, PRIMARY KEY)
+    email (TEXT, UNIQUE)
+    role (TEXT: 'customer' | 'admin')
+    created_at (TIMESTAMP)
+
+- categories
+    id (INTEGER, PRIMARY KEY AUTOINCREMENT)
+    name (TEXT)
+    slug (TEXT, UNIQUE)
+
+- products
+    id (TEXT / UUID, PRIMARY KEY)
+    category_id (INTEGER, FOREIGN KEY)
+    title (TEXT)
+    slug (TEXT, UNIQUE)
+    description (TEXT)
+    base_price (INTEGER in cents/paise)
+    is_active (BOOLEAN)
+    created_at (TIMESTAMP)
+
+- product_variants
+    id (TEXT / UUID, PRIMARY KEY)
+    product_id (TEXT, FOREIGN KEY)
+    sku (TEXT, UNIQUE)
+    title (TEXT, e.g., "Black / XL")
+    price_override (INTEGER, nullable)
+    inventory_quantity (INTEGER)
+
+- product_images
+    id (TEXT / UUID, PRIMARY KEY)
+    product_id (TEXT, FOREIGN KEY)
+    r2_key (TEXT)
+    display_order (INTEGER)
+
+- orders
+    id (TEXT / UUID, PRIMARY KEY)
+    order_number (TEXT, UNIQUE)
+    customer_email (TEXT)
+    shipping_address_json (TEXT)
+    subtotal (INTEGER)
+    discount_amount (INTEGER)
+    shipping_fee (INTEGER)
+    total_amount (INTEGER)
+    payment_status (TEXT: 'unpaid' | 'paid' | 'refunded')
+    fulfillment_status (TEXT: 'pending' | 'processing' | 'shipped' | 'delivered')
+    stripe_session_id (TEXT)
+    tracking_number (TEXT, nullable)
+    created_at (TIMESTAMP)
+
+- order_items
+    id (TEXT / UUID, PRIMARY KEY)
+    order_id (TEXT, FOREIGN KEY)
+    product_id (TEXT)
+    variant_id (TEXT)
+    title (TEXT)
+    unit_price (INTEGER)
+    quantity (INTEGER)
+
+- coupons
+    code (TEXT, PRIMARY KEY)
+    discount_type (TEXT: 'percent' | 'fixed')
+    value (INTEGER)
+    min_order_value (INTEGER)
+    max_uses (INTEGER)
+    used_count (INTEGER)
+    expires_at (TIMESTAMP)
+
+
+--------------------------------------------------------------------------------
+5. ASYNCHRONOUS ARCHITECTURE (HOW ORDERS FLOW ON CLOUDFLARE)
+--------------------------------------------------------------------------------
+1. Customer clicks "Pay Now" -> Cloudflare Worker creates Stripe session.
+2. Customer pays on Stripe -> Stripe fires a Webhook to:
+   POST https://yourstore.com/api/webhooks/stripe
+3. Cloudflare Worker verifies the webhook signature and immediately pushes
+   the event into a `Cloudflare Queue` (returns 200 OK instantly to Stripe).
+4. Cloudflare Queue Consumer (Worker background process):
+   - Updates order status to 'paid' in Cloudflare D1
+   - Reduces inventory in `product_variants`
+   - Dispatches order confirmation email via Cloudflare Email
+5. No dropped orders, no timeouts, resilient to traffic surges.
+
+
+--------------------------------------------------------------------------------
+6. IMPLEMENTATION ROADMAP (HOW TO BUILD STEP-BY-STEP)
+--------------------------------------------------------------------------------
+
+PHASE 1: THE MVP (Build in 10-14 Days)
+  [x] Setup single Wrangler project (Hono + Drizzle ORM + D1 + R2).
+  [x] Create D1 database tables & seed initial sample products.
+  [x] Build Storefront (Product grid, Product detail page, Cart drawer).
+  [x] Connect Stripe Hosted Checkout for payments.
+  [x] Implement Stripe Webhook handler on Cloudflare Worker to confirm orders.
+  [x] Build Minimal Admin: Add/Edit Product with image upload to R2, view orders.
+
+PHASE 2: POLISH & STORE OPERATIONS (Next 1-2 Weeks)
+  [ ] Cloudflare Turnstile integration on forms.
+  [ ] Cloudflare Queues for asynchronous order confirmation emails.
+  [ ] Product Variants (Size, Color with separate inventory).
+  [ ] Coupon code validation at checkout.
+  [ ] Order fulfillment status toggle in admin (Processing -> Shipped).
+
+PHASE 3: ADVANCED CAPABILITIES (Future)
+  [ ] Cloudflare Cron Trigger for daily sales recap and abandoned carts.
+  [ ] Full-text search using D1 FTS5.
+  [ ] Customer Accounts (magic link auth).
+  [ ] Multi-currency support.
+================================================================================

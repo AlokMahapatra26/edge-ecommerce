@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-ecom",
+  "main": "src/api/index.ts",
+  "compatibility_date": "2026-11-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ecom_db",
+      "database_id": "local-ecom-db",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "ecom-product-images"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APP_NAME": "Lumina Commerce"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
