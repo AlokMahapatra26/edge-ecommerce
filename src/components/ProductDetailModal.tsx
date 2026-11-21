@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, ShieldCheck, Truck } from 'lucide-react';
+import { X, ShieldCheck, Truck } from 'lucide-react';
 import type { Product } from '../types';
 import { formatPrice } from '../lib/utils';
 import { useCart } from '../context/CartContext';

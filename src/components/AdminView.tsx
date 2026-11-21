@@ -11,7 +11,6 @@ import {
   FolderTree,
   X,
   Loader2,
-  Tag,
   Layers,
 } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
@@ -94,7 +93,12 @@ export const AdminView: React.FC = () => {
     try {
       const res = await fetch('/api/admin/overview');
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json<{
+          totalRevenue: number;
+          totalOrders: number;
+          totalProducts: number;
+          recentOrders: Order[];
+        }>();
         setStats(data);
       }
     } catch (err) {
