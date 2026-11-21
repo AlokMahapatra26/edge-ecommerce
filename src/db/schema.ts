@@ -1,5 +1,14 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
+// Admin Users Table (For First-Time UI Setup & Auth)
+export const adminUsers = sqliteTable('admin_users', {
+  id: text('id').primaryKey(), // crypto.randomUUID()
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(), // Web Crypto PBKDF2 hash
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 // Categories Table
 export const categories = sqliteTable('categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),

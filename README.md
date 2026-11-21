@@ -53,9 +53,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 3. Admin Backoffice (`/admin`)
 * Click **"Admin"** in the top navigation bar.
-* Secure authentication:
-  * Default Email: `admin@edgecommerce.com`
-  * Default Password: `admin` (Configure via `ADMIN_PASSWORD` in `.env` / `wrangler.jsonc`)
+* **First-Time Setup Wizard:**
+  * When opening `/admin` on a fresh store, the UI automatically prompts: **"First-Time Store Setup: Create Master Admin Account"**.
+  * Enter your Name, Email, and Password.
+  * The password is encrypted with 100,000 PBKDF2 iterations via Web Crypto and saved to Cloudflare D1.
+  * Once created, setup is permanently locked and subsequent visits require regular login.
 * Features:
   * View real-time gross sales, total orders, and active products
   * Click **"Seed Catalog to D1"** to populate the Cloudflare D1 database with sample products in 1 click

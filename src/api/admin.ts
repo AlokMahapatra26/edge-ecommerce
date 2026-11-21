@@ -1,42 +1,80 @@
 import { Hono } from 'hono';
 import { eq, desc } from 'drizzle-orm';
 import { createDb } from '../db';
-import { products, orders, categories, productVariants } from '../db/schema';
+import { products, orders, categories, productVariants, adminUsers } from '../db/schema';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '../db/seed-data';
-import { createAdminToken, verifyAdminToken, constantTimeCompare } from '../lib/auth';
+import {
+  hashPassword,
+  verifyPassword,
+  createAdminToken,
+  verifyAdminToken,
+} from '../lib/auth';
 import type { Bindings } from './index';
 
 export const adminRouter = new Hono<{ Bindings: Bindings }>();
 
 const DEFAULT_JWT_SECRET = 'edge-commerce-super-secret-jwt-key-2026';
-const DEFAULT_ADMIN_EMAIL = 'admin@edgecommerce.com';
-const DEFAULT_ADMIN_PASSWORD = 'admin'; // Default password for instant local demo
 
 // -----------------------------------------------------------------------------
-// PUBLIC AUTH ENDPOINTS (No middleware)
+// PUBLIC AUTH & SETUP ENDPOINTS (No middleware required)
 // -----------------------------------------------------------------------------
 
-// POST /api/admin/auth/login — Verify credentials and set HttpOnly session cookie
-adminRouter.post('/auth/login', async (c) => {
-  const body = await c.req.json<{ email?: string; password?: string }>();
+// GET /api/admin/auth/status — Checks if store already has a Master Admin
+adminRouter.get('/auth/status', async (c) => {
+  if (!c.env?.DB) {
+    return c.json({ hasAdmin: false });
+  }
+
+  const db = createDb(c.env.DB);
+  const existingAdmin = await db.select().from(adminUsers).limit(1).get();
+
+  return c.json({ hasAdmin: !!existingAdmin });
+});
+
+// POST /api/admin/auth/setup — First-Time Onboarding: Create Master Admin in D1
+adminRouter.post('/auth/setup', async (c) => {
+  if (!c.env?.DB) {
+    return c.json({ error: 'Database binding unavailable' }, 500);
+  }
+
+  const db = createDb(c.env.DB);
+
+  // Security check: If an admin already exists, lockdown setup permanently
+  const existingAdmin = await db.select().from(adminUsers).limit(1).get();
+  if (existingAdmin) {
+    return c.json(
+      { error: 'Setup is locked: Master Admin account has already been initialized.' },
+      403
+    );
+  }
+
+  const body = await c.req.json<{ name?: string; email?: string; password?: string }>();
+  const name = body.name?.trim() || 'Store Administrator';
   const email = body.email?.trim().toLowerCase() || '';
   const password = body.password || '';
 
-  const configuredEmail = (c.env as any).ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
-  const configuredPassword = (c.env as any).ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
-  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
-
-  const emailMatches = email === configuredEmail.toLowerCase();
-  const passwordMatches = constantTimeCompare(password, configuredPassword);
-
-  if (!emailMatches || !passwordMatches) {
-    return c.json({ error: 'Invalid admin credentials' }, 401);
+  if (!email || !password || password.length < 6) {
+    return c.json(
+      { error: 'Please provide a valid email and a password with at least 6 characters.' },
+      400
+    );
   }
 
-  // Issue signed Edge JWT token
+  // Hash password using Web Crypto PBKDF2 (100,000 iterations)
+  const passwordHash = await hashPassword(password);
+  const adminId = crypto.randomUUID();
+
+  await db.insert(adminUsers).values({
+    id: adminId,
+    name,
+    email,
+    passwordHash,
+  });
+
+  // Automatically sign in the newly created admin
+  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
   const token = await createAdminToken(email, jwtSecret);
 
-  // Set secure HttpOnly cookie
   c.header(
     'Set-Cookie',
     `admin_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
@@ -44,7 +82,50 @@ adminRouter.post('/auth/login', async (c) => {
 
   return c.json({
     success: true,
-    user: { email, role: 'admin' },
+    user: { id: adminId, name, email, role: 'admin' },
+    message: 'Master Admin account created successfully in Cloudflare D1.',
+  });
+});
+
+// POST /api/admin/auth/login — Verify credentials against Cloudflare D1
+adminRouter.post('/auth/login', async (c) => {
+  if (!c.env?.DB) {
+    return c.json({ error: 'Database binding unavailable' }, 500);
+  }
+
+  const body = await c.req.json<{ email?: string; password?: string }>();
+  const email = body.email?.trim().toLowerCase() || '';
+  const password = body.password || '';
+
+  const db = createDb(c.env.DB);
+  const admin = await db
+    .select()
+    .from(adminUsers)
+    .where(eq(adminUsers.email, email))
+    .get();
+
+  if (!admin) {
+    return c.json({ error: 'Invalid admin credentials' }, 401);
+  }
+
+  // Verify PBKDF2 Web Crypto password hash
+  const isValid = await verifyPassword(password, admin.passwordHash);
+  if (!isValid) {
+    return c.json({ error: 'Invalid admin credentials' }, 401);
+  }
+
+  // Issue Edge JWT token and set HttpOnly cookie
+  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
+  const token = await createAdminToken(email, jwtSecret);
+
+  c.header(
+    'Set-Cookie',
+    `admin_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
+  );
+
+  return c.json({
+    success: true,
+    user: { id: admin.id, name: admin.name, email: admin.email, role: 'admin' },
     message: 'Admin session authenticated successfully',
   });
 });
@@ -82,7 +163,6 @@ adminRouter.get('/auth/me', async (c) => {
 // AUTH MIDDLEWARE FOR ALL OPERATIONAL ADMIN ROUTES
 // -----------------------------------------------------------------------------
 adminRouter.use('*', async (c, next) => {
-  // Skip auth checks for login/logout/me
   if (c.req.path.startsWith('/api/admin/auth/')) {
     return next();
   }
