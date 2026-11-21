@@ -16,7 +16,7 @@ export const adminRouter = new Hono<{ Bindings: Bindings }>();
 const DEFAULT_JWT_SECRET = 'edge-commerce-super-secret-jwt-key-2026';
 
 // -----------------------------------------------------------------------------
-// PUBLIC AUTH & SETUP ENDPOINTS (No middleware required)
+// PUBLIC AUTH & SETUP ENDPOINTS
 // -----------------------------------------------------------------------------
 
 // GET /api/admin/auth/status — Checks if store already has a Master Admin
@@ -39,7 +39,6 @@ adminRouter.post('/auth/setup', async (c) => {
 
   const db = createDb(c.env.DB);
 
-  // Security check: If an admin already exists, lockdown setup permanently
   const existingAdmin = await db.select().from(adminUsers).limit(1).get();
   if (existingAdmin) {
     return c.json(
@@ -60,7 +59,6 @@ adminRouter.post('/auth/setup', async (c) => {
     );
   }
 
-  // Hash password using Web Crypto PBKDF2 (100,000 iterations)
   const passwordHash = await hashPassword(password);
   const adminId = crypto.randomUUID();
 
@@ -71,7 +69,6 @@ adminRouter.post('/auth/setup', async (c) => {
     passwordHash,
   });
 
-  // Automatically sign in the newly created admin
   const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
   const token = await createAdminToken(email, jwtSecret);
 
@@ -108,13 +105,11 @@ adminRouter.post('/auth/login', async (c) => {
     return c.json({ error: 'Invalid admin credentials' }, 401);
   }
 
-  // Verify PBKDF2 Web Crypto password hash
   const isValid = await verifyPassword(password, admin.passwordHash);
   if (!isValid) {
     return c.json({ error: 'Invalid admin credentials' }, 401);
   }
 
-  // Issue Edge JWT token and set HttpOnly cookie
   const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
   const token = await createAdminToken(email, jwtSecret);
 
@@ -197,7 +192,6 @@ adminRouter.post('/seed', async (c) => {
 
   const db = createDb(c.env.DB);
 
-  // 1. Insert Categories
   for (const cat of SEED_CATEGORIES) {
     await db
       .insert(categories)
@@ -205,7 +199,6 @@ adminRouter.post('/seed', async (c) => {
       .onConflictDoNothing();
   }
 
-  // 2. Insert Products and Variants
   for (const prod of SEED_PRODUCTS) {
     const { variants, ...prodData } = prod;
     await db
@@ -265,12 +258,116 @@ adminRouter.get('/overview', async (c) => {
   });
 });
 
-// GET /api/admin/orders — List all orders strictly from D1
-adminRouter.get('/orders', async (c) => {
+// GET /api/admin/products — List all products with categories for admin table
+adminRouter.get('/products', async (c) => {
+  if (!c.env?.DB) return c.json({ products: [] });
+  const db = createDb(c.env.DB);
+  const items = await db.select().from(products).orderBy(desc(products.createdAt)).all();
+  return c.json({ products: items });
+});
+
+// POST /api/admin/products — Create a new product in D1
+adminRouter.post('/products', async (c) => {
   if (!c.env?.DB) {
-    return c.json({ orders: [] });
+    return c.json({ error: 'DB binding not available' }, 500);
+  }
+  const db = createDb(c.env.DB);
+  const body = await c.req.json<{
+    title: string;
+    slug?: string;
+    description: string;
+    basePrice: number; // in cents
+    compareAtPrice?: number | null;
+    categoryId?: number | null;
+    primaryImage?: string;
+    featured?: boolean;
+  }>();
+
+  if (!body.title || !body.basePrice) {
+    return c.json({ error: 'Product title and price are required' }, 400);
   }
 
+  const id = crypto.randomUUID();
+  const slug =
+    body.slug ||
+    body.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') +
+      '-' +
+      Math.floor(1000 + Math.random() * 9000);
+
+  await db.insert(products).values({
+    id,
+    title: body.title,
+    slug,
+    description: body.description || '',
+    basePrice: body.basePrice,
+    compareAtPrice: body.compareAtPrice || null,
+    categoryId: body.categoryId || null,
+    primaryImage: body.primaryImage || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1000&q=80',
+    featured: body.featured || false,
+    isActive: true,
+  });
+
+  return c.json({ success: true, productId: id, message: 'Product created in Cloudflare D1' });
+});
+
+// DELETE /api/admin/products/:id — Delete a product from D1
+adminRouter.delete('/products/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = createDb(c.env.DB);
+  const productId = c.req.param('id');
+  await db.delete(products).where(eq(products.id, productId));
+  return c.json({ success: true, message: 'Product deleted' });
+});
+
+// GET /api/admin/categories — List categories
+adminRouter.get('/categories', async (c) => {
+  if (!c.env?.DB) return c.json({ categories: [] });
+  const db = createDb(c.env.DB);
+  const list = await db.select().from(categories).all();
+  return c.json({ categories: list });
+});
+
+// POST /api/admin/categories — Create a category in D1
+adminRouter.post('/categories', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = createDb(c.env.DB);
+  const body = await c.req.json<{ name: string; slug?: string; description?: string }>();
+
+  if (!body.name) {
+    return c.json({ error: 'Category name is required' }, 400);
+  }
+
+  const slug =
+    body.slug ||
+    body.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+  await db.insert(categories).values({
+    name: body.name,
+    slug,
+    description: body.description || null,
+  });
+
+  return c.json({ success: true, message: 'Category created in Cloudflare D1' });
+});
+
+// DELETE /api/admin/categories/:id — Delete a category
+adminRouter.delete('/categories/:id', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB not available' }, 500);
+  const db = createDb(c.env.DB);
+  const catId = parseInt(c.req.param('id'), 10);
+  await db.delete(categories).where(eq(categories.id, catId));
+  return c.json({ success: true, message: 'Category deleted' });
+});
+
+// GET /api/admin/orders — List all orders
+adminRouter.get('/orders', async (c) => {
+  if (!c.env?.DB) return c.json({ orders: [] });
   const db = createDb(c.env.DB);
   const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt)).all();
   return c.json({ orders: orderList });
@@ -278,9 +375,7 @@ adminRouter.get('/orders', async (c) => {
 
 // PUT /api/admin/orders/:id/status — Update fulfillment status in D1
 adminRouter.put('/orders/:id/status', async (c) => {
-  if (!c.env?.DB) {
-    return c.json({ error: 'DB binding not available' }, 500);
-  }
+  if (!c.env?.DB) return c.json({ error: 'DB binding not available' }, 500);
   const db = createDb(c.env.DB);
   const orderId = c.req.param('id');
   const body = await c.req.json<{ fulfillmentStatus: string; trackingNumber?: string }>();
@@ -294,36 +389,4 @@ adminRouter.put('/orders/:id/status', async (c) => {
     .where(eq(orders.id, orderId));
 
   return c.json({ success: true, message: 'Order status updated' });
-});
-
-// POST /api/admin/products — Create a new product in D1
-adminRouter.post('/products', async (c) => {
-  if (!c.env?.DB) {
-    return c.json({ error: 'DB binding not available' }, 500);
-  }
-  const db = createDb(c.env.DB);
-  const body = await c.req.json<{
-    title: string;
-    slug: string;
-    description: string;
-    basePrice: number;
-    categoryId?: number;
-    primaryImage: string;
-    featured?: boolean;
-  }>();
-
-  const id = crypto.randomUUID();
-  await db.insert(products).values({
-    id,
-    title: body.title,
-    slug: body.slug,
-    description: body.description,
-    basePrice: body.basePrice,
-    categoryId: body.categoryId || null,
-    primaryImage: body.primaryImage,
-    featured: body.featured || false,
-    isActive: true,
-  });
-
-  return c.json({ success: true, productId: id });
 });
