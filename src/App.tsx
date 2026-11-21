@@ -6,20 +6,32 @@ import { CartDrawer } from './components/CartDrawer';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { AdminView } from './components/AdminView';
 import { CartProvider } from './context/CartContext';
-import { SEED_PRODUCTS, SEED_CATEGORIES } from './db/seed-data';
 import type { Product, Category } from './types';
-import { Sparkles, ShoppingBag, ArrowRight } from 'lucide-react';
+import { PackageOpen } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<'store' | 'admin'>('store');
-  const [products, setProducts] = useState<Product[]>(SEED_PRODUCTS as any);
-  const [categories, setCategories] = useState<Category[]>(SEED_CATEGORIES);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch products from Edge API
+  // Fetch categories from D1
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/products/categories');
+      if (res.ok) {
+        const data = await res.json<{ categories: Category[] }>();
+        setCategories(data.categories || []);
+      }
+    } catch {
+      setCategories([]);
+    }
+  };
+
+  // Fetch products from D1
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -34,32 +46,20 @@ export const AppContent: React.FC = () => {
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json<{ products: Product[] }>();
-        if (data.products && data.products.length > 0) {
-          setProducts(data.products);
-        } else if (selectedCategory === 'all' && !searchQuery) {
-          // If D1 is empty on initial run, fall back to seed data
-          setProducts(SEED_PRODUCTS as any);
-        } else {
-          setProducts([]);
-        }
+        setProducts(data.products || []);
+      } else {
+        setProducts([]);
       }
     } catch {
-      // In offline/initial dev mode, fallback to SEED_PRODUCTS
-      let filtered = SEED_PRODUCTS as any;
-      if (selectedCategory !== 'all') {
-        const cat = SEED_CATEGORIES.find((c) => c.slug === selectedCategory);
-        if (cat) filtered = filtered.filter((p: any) => p.categoryId === cat.id);
-      }
-      if (searchQuery) {
-        filtered = filtered.filter((p: any) =>
-          p.title.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      setProducts(filtered);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -91,18 +91,18 @@ export const AppContent: React.FC = () => {
 
           {/* Catalog Section */}
           <section id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-            {/* Category Filter Pills */}
+            {/* Category Filter Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-border/50">
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-foreground">
-                  Featured Collection
+                  Catalog
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Curated minimalist drops • Edge distributed across 300+ PoPs
+                  Real-time inventory from Cloudflare D1
                 </p>
               </div>
 
-              {/* Category Pills */}
+              {/* Category Pills (Only shown if categories exist in DB) */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setSelectedCategory('all')}
@@ -130,7 +130,7 @@ export const AppContent: React.FC = () => {
               </div>
             </div>
 
-            {/* Product Grid */}
+            {/* Product Grid or Clean Empty State */}
             <div className="mt-8">
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -146,13 +146,15 @@ export const AppContent: React.FC = () => {
                   ))}
                 </div>
               ) : products.length === 0 ? (
-                <div className="text-center py-20 space-y-3">
-                  <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center mx-auto text-xl">
-                    🔍
+                <div className="text-center py-24 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-secondary/60 border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                    <PackageOpen className="w-8 h-8" />
                   </div>
-                  <h3 className="font-bold text-base text-foreground">No matching products found</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Try adjusting your category filter or search keywords.
+                  <h3 className="font-extrabold text-lg text-foreground">
+                    No products in store
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    The database is currently empty. Switch to the <strong>Admin Panel</strong> to add new products or seed sample items.
                   </p>
                 </div>
               ) : (

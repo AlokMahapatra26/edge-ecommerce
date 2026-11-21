@@ -10,7 +10,7 @@ export const adminRouter = new Hono<{ Bindings: Bindings }>();
 // POST /api/admin/seed — Populate D1 with initial rich catalog
 adminRouter.post('/seed', async (c) => {
   if (!c.env?.DB) {
-    return c.json({ error: 'D1 binding not available' }, 500);
+    return c.json({ error: 'D1 database binding not available' }, 500);
   }
 
   const db = createDb(c.env.DB);
@@ -53,56 +53,48 @@ adminRouter.post('/seed', async (c) => {
   return c.json({ success: true, message: 'Database successfully seeded with categories and products' });
 });
 
-// GET /api/admin/overview — Dashboard metrics
+// GET /api/admin/overview — Dashboard metrics strictly from D1
 adminRouter.get('/overview', async (c) => {
-  if (c.env?.DB) {
-    try {
-      const db = createDb(c.env.DB);
-
-      const [allOrders, allProducts] = await Promise.all([
-        db.select().from(orders).orderBy(desc(orders.createdAt)).all(),
-        db.select().from(products).all(),
-      ]);
-
-      const totalRevenue = allOrders
-        .filter((o) => o.paymentStatus === 'paid')
-        .reduce((sum, o) => sum + o.totalAmount, 0);
-
-      return c.json({
-        totalRevenue,
-        totalOrders: allOrders.length,
-        totalProducts: allProducts.length,
-        recentOrders: allOrders.slice(0, 10),
-      });
-    } catch (err) {
-      console.warn('Admin overview DB query failed, returning fallback:', err);
-    }
+  if (!c.env?.DB) {
+    return c.json({
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalProducts: 0,
+      recentOrders: [],
+    });
   }
 
-  // Fallback demo metrics if DB is not yet seeded
+  const db = createDb(c.env.DB);
+
+  const [allOrders, allProducts] = await Promise.all([
+    db.select().from(orders).orderBy(desc(orders.createdAt)).all(),
+    db.select().from(products).all(),
+  ]);
+
+  const totalRevenue = allOrders
+    .filter((o) => o.paymentStatus === 'paid')
+    .reduce((sum, o) => sum + o.totalAmount, 0);
+
   return c.json({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalProducts: SEED_PRODUCTS.length,
-    recentOrders: [],
+    totalRevenue,
+    totalOrders: allOrders.length,
+    totalProducts: allProducts.length,
+    recentOrders: allOrders.slice(0, 10),
   });
 });
 
-// GET /api/admin/orders — List all orders
+// GET /api/admin/orders — List all orders strictly from D1
 adminRouter.get('/orders', async (c) => {
-  if (c.env?.DB) {
-    try {
-      const db = createDb(c.env.DB);
-      const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt)).all();
-      return c.json({ orders: orderList });
-    } catch {
-      // Fallback
-    }
+  if (!c.env?.DB) {
+    return c.json({ orders: [] });
   }
-  return c.json({ orders: [] });
+
+  const db = createDb(c.env.DB);
+  const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt)).all();
+  return c.json({ orders: orderList });
 });
 
-// PUT /api/admin/orders/:id/status — Update fulfillment status
+// PUT /api/admin/orders/:id/status — Update fulfillment status in D1
 adminRouter.put('/orders/:id/status', async (c) => {
   if (!c.env?.DB) {
     return c.json({ error: 'DB binding not available' }, 500);
@@ -122,7 +114,7 @@ adminRouter.put('/orders/:id/status', async (c) => {
   return c.json({ success: true, message: 'Order status updated' });
 });
 
-// POST /api/admin/products — Create a new product
+// POST /api/admin/products — Create a new product in D1
 adminRouter.post('/products', async (c) => {
   if (!c.env?.DB) {
     return c.json({ error: 'DB binding not available' }, 500);
