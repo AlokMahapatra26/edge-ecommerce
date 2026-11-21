@@ -8,18 +8,23 @@ import { CartDrawer } from './components/CartDrawer';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { AdminView } from './components/AdminView';
 import { Footer } from './components/Footer';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { CartProvider } from './context/CartContext';
+import { INDUSTRY_THEMES, type ThemeId } from './types/theme';
 import type { Product, Category } from './types';
 import { PackageOpen } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<'store' | 'admin'>('store');
+  const [currentThemeId, setCurrentThemeId] = useState<ThemeId>('fashion');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const activeTheme = INDUSTRY_THEMES[currentThemeId];
 
   // Fetch categories from D1
   const fetchCategories = async () => {
@@ -78,6 +83,7 @@ export const AppContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
       {/* Luxury Navbar with Announcement Bar */}
       <Navbar
+        theme={activeTheme}
         activeView={activeView}
         setActiveView={setActiveView}
         searchQuery={searchQuery}
@@ -91,16 +97,20 @@ export const AppContent: React.FC = () => {
         </main>
       ) : (
         <main className="flex-1">
-          {/* Full-Bleed Cinematic Editorial Hero */}
+          {/* Dynamic Theme Hero Section with Wireframe Blueprint */}
           <Hero
+            theme={activeTheme}
             onExplore={() => {
               const el = document.getElementById('catalog');
               el?.scrollIntoView({ behavior: 'smooth' });
             }}
           />
 
-          {/* Visual Category Showcase Tiles */}
-          <CategoryShowcase onSelectCategory={handleCategorySelect} />
+          {/* Dynamic Category Showcase Tiles */}
+          <CategoryShowcase
+            theme={activeTheme}
+            onSelectCategory={handleCategorySelect}
+          />
 
           {/* Catalog Section */}
           <section id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -108,16 +118,16 @@ export const AppContent: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 border-b border-border/50">
               <div>
                 <p className="text-[11px] font-bold tracking-[0.25em] uppercase text-muted-foreground mb-1">
-                  The Archive
+                  Catalog Inventory
                 </p>
-                <h2 className="font-editorial text-3xl sm:text-4xl font-normal text-foreground tracking-tight">
+                <h2 className={`${activeTheme.fontClass} text-3xl sm:text-4xl font-normal text-foreground tracking-tight`}>
                   {selectedCategory === 'all'
-                    ? 'All Pieces'
+                    ? 'All Items'
                     : categories.find((c) => c.slug === selectedCategory)?.name || 'Collection'}
                 </h2>
               </div>
 
-              {/* Minimal Text Category Filters */}
+              {/* Category Filter Pills */}
               <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setSelectedCategory('all')}
@@ -162,11 +172,11 @@ export const AppContent: React.FC = () => {
                   <div className="w-16 h-16 bg-secondary/40 border border-border flex items-center justify-center mx-auto text-muted-foreground">
                     <PackageOpen className="w-7 h-7" />
                   </div>
-                  <h3 className="font-editorial text-2xl font-normal text-foreground">
-                    No Pieces Found
+                  <h3 className={`${activeTheme.fontClass} text-2xl font-normal text-foreground`}>
+                    No Pieces in D1 Database
                   </h3>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto font-light leading-relaxed">
-                    The collection is currently empty. Open the <strong>Admin Panel</strong> to add items or seed sample products to Cloudflare D1.
+                    The store database is clean and empty. Switch to the <strong>Admin Panel</strong> to add items or seed sample products to Cloudflare D1.
                   </p>
                 </div>
               ) : (
@@ -175,6 +185,7 @@ export const AppContent: React.FC = () => {
                     <ProductCard
                       key={product.id}
                       product={product}
+                      cardAspect={activeTheme.cardAspect}
                       onQuickView={(p) => setSelectedProduct(p)}
                     />
                   ))}
@@ -183,8 +194,8 @@ export const AppContent: React.FC = () => {
             </div>
           </section>
 
-          {/* Luxury Editorial Craftsmanship Story */}
-          <EditorialSection />
+          {/* Dynamic Editorial Brand Story */}
+          <EditorialSection theme={activeTheme} />
         </main>
       )}
 
@@ -199,6 +210,14 @@ export const AppContent: React.FC = () => {
 
       {/* High-End Fashion Footer */}
       <Footer />
+
+      {/* Live Industry Theme Switcher Pill */}
+      {activeView === 'store' && (
+        <ThemeSwitcher
+          currentTheme={currentThemeId}
+          onThemeChange={(newTheme) => setCurrentThemeId(newTheme)}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingBag, Search, LayoutDashboard } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import type { IndustryTheme } from '../types/theme';
 
 interface NavbarProps {
   activeView: 'store' | 'admin';
@@ -8,6 +9,7 @@ interface NavbarProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   onSelectCategory?: (slug: string) => void;
+  theme: IndustryTheme;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   setSearchQuery,
   onSelectCategory,
+  theme,
 }) => {
   const { itemCount, toggleCart } = useCart();
 
@@ -30,62 +33,47 @@ export const Navbar: React.FC<NavbarProps> = ({
       <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
           {/* Brand Logo */}
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-8">
             <button
               onClick={() => setActiveView('store')}
               className="flex items-center gap-2 group text-left"
             >
-              <span className="font-editorial text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                EDGE COMMERCE
+              <span className={`${theme.fontClass} text-2xl sm:text-3xl font-bold tracking-tight text-foreground`}>
+                {theme.brandName}
               </span>
             </button>
 
             {/* Editorial Category Links (Desktop) */}
             {activeView === 'store' && (
-              <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+              <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 <button
                   onClick={() => onSelectCategory && onSelectCategory('all')}
                   className="hover:text-foreground transition-colors"
                 >
-                  All Products
+                  All
                 </button>
-                <button
-                  onClick={() => onSelectCategory && onSelectCategory('footwear')}
-                  className="hover:text-foreground transition-colors"
-                >
-                  Footwear
-                </button>
-                <button
-                  onClick={() => onSelectCategory && onSelectCategory('apparel')}
-                  className="hover:text-foreground transition-colors"
-                >
-                  Apparel
-                </button>
-                <button
-                  onClick={() => onSelectCategory && onSelectCategory('accessories')}
-                  className="hover:text-foreground transition-colors"
-                >
-                  Accessories
-                </button>
-                <button
-                  onClick={() => onSelectCategory && onSelectCategory('tech')}
-                  className="hover:text-foreground transition-colors"
-                >
-                  Audio
-                </button>
+                {theme.categories.map((c) => (
+                  <button
+                    key={c.title}
+                    onClick={() => onSelectCategory && onSelectCategory(c.slug)}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {c.title}
+                  </button>
+                ))}
               </nav>
             )}
           </div>
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-4">
-            {/* Search Input (Minimalist) */}
+            {/* Search Input */}
             {activeView === 'store' && (
-              <div className="relative hidden sm:block w-48 lg:w-60">
+              <div className="relative hidden sm:block w-44 lg:w-56">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search catalog..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-secondary/50 hover:bg-secondary focus:bg-background border border-border/50 rounded-none pl-9 pr-3 py-1.5 text-xs tracking-wide focus:outline-none focus:border-foreground transition-all"
