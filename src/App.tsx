@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { CategoryShowcase } from './components/CategoryShowcase';
+import { EditorialSection } from './components/EditorialSection';
 import { ProductCard } from './components/ProductCard';
 import { CartDrawer } from './components/CartDrawer';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { AdminView } from './components/AdminView';
+import { Footer } from './components/Footer';
 import { CartProvider } from './context/CartContext';
 import type { Product, Category } from './types';
 import { PackageOpen } from 'lucide-react';
@@ -65,14 +68,21 @@ export const AppContent: React.FC = () => {
     fetchProducts();
   }, [selectedCategory, searchQuery]);
 
+  const handleCategorySelect = (slug: string) => {
+    setSelectedCategory(slug);
+    const catalogEl = document.getElementById('catalog');
+    catalogEl?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
-      {/* Top Navbar */}
+    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
+      {/* Luxury Navbar with Announcement Bar */}
       <Navbar
         activeView={activeView}
         setActiveView={setActiveView}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onSelectCategory={handleCategorySelect}
       />
 
       {activeView === 'admin' ? (
@@ -81,7 +91,7 @@ export const AppContent: React.FC = () => {
         </main>
       ) : (
         <main className="flex-1">
-          {/* Hero Section */}
+          {/* Full-Bleed Cinematic Editorial Hero */}
           <Hero
             onExplore={() => {
               const el = document.getElementById('catalog');
@@ -89,39 +99,44 @@ export const AppContent: React.FC = () => {
             }}
           />
 
+          {/* Visual Category Showcase Tiles */}
+          <CategoryShowcase onSelectCategory={handleCategorySelect} />
+
           {/* Catalog Section */}
           <section id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-            {/* Category Filter Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 border-b border-border/50">
+            {/* Minimalist Catalog Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 border-b border-border/50">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-foreground">
-                  Catalog
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Real-time inventory from Cloudflare D1
+                <p className="text-[11px] font-bold tracking-[0.25em] uppercase text-muted-foreground mb-1">
+                  The Archive
                 </p>
+                <h2 className="font-editorial text-3xl sm:text-4xl font-normal text-foreground tracking-tight">
+                  {selectedCategory === 'all'
+                    ? 'All Pieces'
+                    : categories.find((c) => c.slug === selectedCategory)?.name || 'Collection'}
+                </h2>
               </div>
 
-              {/* Category Pills (Only shown if categories exist in DB) */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
+              {/* Minimal Text Category Filters */}
+              <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setSelectedCategory('all')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                  className={`transition-colors shrink-0 ${
                     selectedCategory === 'all'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      ? 'text-foreground underline underline-offset-8 decoration-2'
+                      : 'hover:text-foreground'
                   }`}
                 >
-                  All Items
+                  All ({products.length})
                 </button>
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.slug)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                    className={`transition-colors shrink-0 ${
                       selectedCategory === cat.slug
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        ? 'text-foreground underline underline-offset-8 decoration-2'
+                        : 'hover:text-foreground'
                     }`}
                   >
                     {cat.name}
@@ -131,34 +146,31 @@ export const AppContent: React.FC = () => {
             </div>
 
             {/* Product Grid or Clean Empty State */}
-            <div className="mt-8">
+            <div className="mt-10">
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="rounded-2xl border border-border/40 p-4 space-y-4 animate-pulse bg-secondary/20"
-                    >
-                      <div className="aspect-square w-full rounded-xl bg-secondary/50" />
-                      <div className="h-4 bg-secondary/60 rounded w-3/4" />
-                      <div className="h-3 bg-secondary/40 rounded w-1/2" />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="space-y-3 animate-pulse">
+                      <div className="aspect-[3/4] w-full bg-secondary/50" />
+                      <div className="h-4 bg-secondary/60 rounded w-2/3" />
+                      <div className="h-3 bg-secondary/40 rounded w-1/3" />
                     </div>
                   ))}
                 </div>
               ) : products.length === 0 ? (
                 <div className="text-center py-24 space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-secondary/60 border border-border flex items-center justify-center mx-auto text-muted-foreground">
-                    <PackageOpen className="w-8 h-8" />
+                  <div className="w-16 h-16 bg-secondary/40 border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                    <PackageOpen className="w-7 h-7" />
                   </div>
-                  <h3 className="font-extrabold text-lg text-foreground">
-                    No products in store
+                  <h3 className="font-editorial text-2xl font-normal text-foreground">
+                    No Pieces Found
                   </h3>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    The database is currently empty. Switch to the <strong>Admin Panel</strong> to add new products or seed sample items.
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto font-light leading-relaxed">
+                    The collection is currently empty. Open the <strong>Admin Panel</strong> to add items or seed sample products to Cloudflare D1.
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}
@@ -170,29 +182,23 @@ export const AppContent: React.FC = () => {
               )}
             </div>
           </section>
+
+          {/* Luxury Editorial Craftsmanship Story */}
+          <EditorialSection />
         </main>
       )}
 
       {/* Slide-out Cart Drawer */}
       <CartDrawer />
 
-      {/* Product Quick View Modal */}
+      {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* Global Footer */}
-      <footer className="border-t border-border/50 bg-secondary/20 py-10 mt-16 text-center text-xs text-muted-foreground">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
-          <p className="font-bold text-foreground">
-            © 2026 Edge Commerce, Inc. All rights reserved.
-          </p>
-          <p>
-            Free shipping on orders over $100 • 30-day money-back guarantee • Safe & Secure Checkout
-          </p>
-        </div>
-      </footer>
+      {/* High-End Fashion Footer */}
+      <Footer />
     </div>
   );
 };

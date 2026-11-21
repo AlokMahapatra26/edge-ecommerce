@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Search, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { ShoppingBag, Search, LayoutDashboard } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 interface NavbarProps {
@@ -7,6 +7,7 @@ interface NavbarProps {
   setActiveView: (view: 'store' | 'admin') => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  onSelectCategory?: (slug: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -14,74 +15,111 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveView,
   searchQuery,
   setSearchQuery,
+  onSelectCategory,
 }) => {
   const { itemCount, toggleCart } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => setActiveView('store')}
-            className="flex items-center gap-2 group text-left"
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm">
-              E
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight">EDGE COMMERCE</span>
-              <span className="text-xs block text-muted-foreground font-medium -mt-1 tracking-wider uppercase">
-                Online Store
-              </span>
-            </div>
-          </button>
-        </div>
-
-        {/* Search Bar (Storefront only) */}
-        {activeView === 'store' && (
-          <div className="flex-1 max-w-md hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search products (sneakers, watch, hoodie)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-secondary/60 hover:bg-secondary focus:bg-background border border-border/60 rounded-full pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Right Nav Actions */}
-        <div className="flex items-center gap-3">
-          {/* Admin Switcher */}
-          <button
-            onClick={() => setActiveView(activeView === 'store' ? 'admin' : 'store')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-border bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>{activeView === 'store' ? 'Admin Panel' : 'Storefront'}</span>
-          </button>
-
-          {/* Cart Trigger Button */}
-          {activeView === 'store' && (
-            <button
-              onClick={toggleCart}
-              aria-label="Open Shopping Cart"
-              className="relative p-2.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center shadow-md animate-in fade-in zoom-in">
-                  {itemCount}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
+    <>
+      {/* Top Luxury Announcement Ticker */}
+      <div className="w-full bg-neutral-950 text-neutral-300 text-[11px] font-medium tracking-[0.2em] uppercase py-2 px-4 text-center border-b border-white/10">
+        <span>Complimentary Express Shipping On Orders Over $150 • Worldwide Delivery</span>
       </div>
-    </header>
+
+      {/* Main Luxury Navigation Bar */}
+      <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-md border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
+          {/* Brand Logo */}
+          <div className="flex items-center gap-10">
+            <button
+              onClick={() => setActiveView('store')}
+              className="flex items-center gap-2 group text-left"
+            >
+              <span className="font-editorial text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                EDGE COMMERCE
+              </span>
+            </button>
+
+            {/* Editorial Category Links (Desktop) */}
+            {activeView === 'store' && (
+              <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory('all')}
+                  className="hover:text-foreground transition-colors"
+                >
+                  All Products
+                </button>
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory('footwear')}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Footwear
+                </button>
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory('apparel')}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Apparel
+                </button>
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory('accessories')}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Accessories
+                </button>
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory('tech')}
+                  className="hover:text-foreground transition-colors"
+                >
+                  Audio
+                </button>
+              </nav>
+            )}
+          </div>
+
+          {/* Right Action Icons */}
+          <div className="flex items-center gap-4">
+            {/* Search Input (Minimalist) */}
+            {activeView === 'store' && (
+              <div className="relative hidden sm:block w-48 lg:w-60">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-secondary/50 hover:bg-secondary focus:bg-background border border-border/50 rounded-none pl-9 pr-3 py-1.5 text-xs tracking-wide focus:outline-none focus:border-foreground transition-all"
+                />
+              </div>
+            )}
+
+            {/* Admin Switcher */}
+            <button
+              onClick={() => setActiveView(activeView === 'store' ? 'admin' : 'store')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-wider font-bold border border-border bg-secondary/40 hover:bg-secondary text-foreground transition-colors"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>{activeView === 'store' ? 'Admin' : 'Store'}</span>
+            </button>
+
+            {/* Shopping Bag Trigger */}
+            {activeView === 'store' && (
+              <button
+                onClick={toggleCart}
+                aria-label="Open Shopping Bag"
+                className="relative p-2 text-foreground hover:opacity-75 transition-opacity flex items-center justify-center"
+              >
+                <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
+                {itemCount > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+    </>
   );
 };
