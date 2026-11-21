@@ -3,9 +3,111 @@ import { eq, desc } from 'drizzle-orm';
 import { createDb } from '../db';
 import { products, orders, categories, productVariants } from '../db/schema';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '../db/seed-data';
+import { createAdminToken, verifyAdminToken, constantTimeCompare } from '../lib/auth';
 import type { Bindings } from './index';
 
 export const adminRouter = new Hono<{ Bindings: Bindings }>();
+
+const DEFAULT_JWT_SECRET = 'edge-commerce-super-secret-jwt-key-2026';
+const DEFAULT_ADMIN_EMAIL = 'admin@edgecommerce.com';
+const DEFAULT_ADMIN_PASSWORD = 'admin'; // Default password for instant local demo
+
+// -----------------------------------------------------------------------------
+// PUBLIC AUTH ENDPOINTS (No middleware)
+// -----------------------------------------------------------------------------
+
+// POST /api/admin/auth/login — Verify credentials and set HttpOnly session cookie
+adminRouter.post('/auth/login', async (c) => {
+  const body = await c.req.json<{ email?: string; password?: string }>();
+  const email = body.email?.trim().toLowerCase() || '';
+  const password = body.password || '';
+
+  const configuredEmail = (c.env as any).ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
+  const configuredPassword = (c.env as any).ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
+  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
+
+  const emailMatches = email === configuredEmail.toLowerCase();
+  const passwordMatches = constantTimeCompare(password, configuredPassword);
+
+  if (!emailMatches || !passwordMatches) {
+    return c.json({ error: 'Invalid admin credentials' }, 401);
+  }
+
+  // Issue signed Edge JWT token
+  const token = await createAdminToken(email, jwtSecret);
+
+  // Set secure HttpOnly cookie
+  c.header(
+    'Set-Cookie',
+    `admin_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
+  );
+
+  return c.json({
+    success: true,
+    user: { email, role: 'admin' },
+    message: 'Admin session authenticated successfully',
+  });
+});
+
+// POST /api/admin/auth/logout — Destroy session cookie
+adminRouter.post('/auth/logout', (c) => {
+  c.header(
+    'Set-Cookie',
+    'admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
+  );
+  return c.json({ success: true, message: 'Logged out' });
+});
+
+// GET /api/admin/auth/me — Check session status
+adminRouter.get('/auth/me', async (c) => {
+  const cookieHeader = c.req.header('Cookie') || '';
+  const tokenMatch = cookieHeader.match(/admin_session=([^;]+)/);
+  const token = tokenMatch ? tokenMatch[1] : c.req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return c.json({ authenticated: false }, 401);
+  }
+
+  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
+  const verified = await verifyAdminToken(token, jwtSecret);
+
+  if (!verified) {
+    return c.json({ authenticated: false }, 401);
+  }
+
+  return c.json({ authenticated: true, user: verified });
+});
+
+// -----------------------------------------------------------------------------
+// AUTH MIDDLEWARE FOR ALL OPERATIONAL ADMIN ROUTES
+// -----------------------------------------------------------------------------
+adminRouter.use('*', async (c, next) => {
+  // Skip auth checks for login/logout/me
+  if (c.req.path.startsWith('/api/admin/auth/')) {
+    return next();
+  }
+
+  const cookieHeader = c.req.header('Cookie') || '';
+  const tokenMatch = cookieHeader.match(/admin_session=([^;]+)/);
+  const token = tokenMatch ? tokenMatch[1] : c.req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return c.json({ error: 'Unauthorized: Admin authentication required' }, 401);
+  }
+
+  const jwtSecret = (c.env as any).JWT_SECRET || DEFAULT_JWT_SECRET;
+  const verified = await verifyAdminToken(token, jwtSecret);
+
+  if (!verified) {
+    return c.json({ error: 'Unauthorized: Invalid or expired admin session' }, 401);
+  }
+
+  return next();
+});
+
+// -----------------------------------------------------------------------------
+// PROTECTED ADMIN ENDPOINTS
+// -----------------------------------------------------------------------------
 
 // POST /api/admin/seed — Populate D1 with initial rich catalog
 adminRouter.post('/seed', async (c) => {

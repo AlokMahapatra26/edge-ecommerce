@@ -52,10 +52,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 * One-click checkout flow with Stripe
 
 ### 3. Admin Backoffice (`/admin`)
-* Click **"Admin Panel"** in the top navigation bar
-* View gross sales, total orders, and active products
-* Click **"Seed Catalog to D1"** to populate the Cloudflare D1 database with sample products in 1 click
-* View and manage real-time customer orders
+* Click **"Admin"** in the top navigation bar.
+* Secure authentication:
+  * Default Email: `admin@edgecommerce.com`
+  * Default Password: `admin` (Configure via `ADMIN_PASSWORD` in `.env` / `wrangler.jsonc`)
+* Features:
+  * View real-time gross sales, total orders, and active products
+  * Click **"Seed Catalog to D1"** to populate the Cloudflare D1 database with sample products in 1 click
+  * View and manage real-time customer orders saved in D1 SQLite
+  * Secure session with HttpOnly cookies & Web Crypto tokens
 
 ---
 
